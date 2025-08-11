@@ -1,0 +1,22 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a//dev/null b/index.html
+index 0000000000000000000000000000000000000000..cba6c64255376591869901cc14800174d07b9cb1 100644
+--- a//dev/null
++++ b/index.html
+@@ -0,0 +1,13 @@
++<!DOCTYPE html>
++<html lang="ko">
++<head>
++  <meta charset="UTF-8" />
++  <title>환영합니다</title>
++  <link rel="stylesheet" href="style.css" />
++  <script src="script.js" defer></script>
++</head>
++<body>
++  <h1>환영합니다</h1>
++  <button id="homeButton" class="home-button">위드석 홈</button>
++</body>
++</html>
+ 
+EOF
+)
