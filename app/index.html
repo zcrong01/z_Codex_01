@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>블록으로 만드는 아두이노 코딩</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;">
+  <style>
+    /* [주석단위]_Part_00100_layout */
+    body { margin:0; font-family: sans-serif; }
+    .topbar { height:50px; display:flex; align-items:center; gap:8px; padding:10px; border-bottom:1px solid #ccc; }
+    .wrap { display:grid; grid-template-columns:20% 40% 40%; height:calc(100vh - 50px); }
+    .pane { border-right:1px solid #ccc; overflow:auto; }
+    .pane:last-child { border-right:none; }
+    #code { width:100%; height:100%; box-sizing:border-box; border:0; padding:10px; font-family:monospace; }
+  </style>
+  <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script src="blocks/core.js"></script>
+  <script src="generators/arduino.js"></script>
+</head>
+<body>
+  <!-- [주석단위]_Part_00200_topbar -->
+  <div class="topbar">
+    <button id="btn_convert">Convert</button>
+    <button id="btn_save">Save</button>
+    <span id="status"></span>
+  </div>
+
+  <!-- [주석단위]_Part_00300_body -->
+  <div class="wrap">
+    <div class="pane">
+      <xml id="toolbox" style="display:none">
+        <category name="흐름" colour="#7950f2">
+          <block type="arduino_setup_loop"></block>
+        </category>
+        <category name="입출력" colour="#228be6">
+          <block type="io_digital_write"></block>
+        </category>
+        <category name="시간" colour="#40c057">
+          <block type="base_delay"></block>
+        </category>
+      </xml>
+    </div>
+    <div class="pane"><div id="blocklyDiv" style="width:100%;height:100%;"></div></div>
+    <div class="pane"><textarea id="code" spellcheck="false"></textarea></div>
+  </div>
+
+  <!-- [주석단위]_Part_00400_bootstrap -->
+  <script>
+    let Bridge = null;
+    new QWebChannel(qt.webChannelTransport, function(channel) {
+      Bridge = channel.objects.AppBridge;
+      Bridge.ping();
+      document.getElementById('status').textContent = 'connected';
+    });
+
+    const workspace = Blockly.inject('blocklyDiv', {
+      toolbox: document.getElementById('toolbox'),
+      trashcan: true
+    });
+
+    document.getElementById('btn_convert').addEventListener('click', () => {
+      const code = Blockly.Arduino.workspaceToCode(workspace);
+      document.getElementById('code').value = code;
+    });
+
+    document.getElementById('btn_save').addEventListener('click', async () => {
+      const code = document.getElementById('code').value;
+      const res = JSON.parse(await Bridge.save(code));
+      document.getElementById('status').textContent = res.ok ? 'saved' : 'error';
+    });
+  </script>
+</body>
+</html>
