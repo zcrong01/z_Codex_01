@@ -1,0 +1,37 @@
+{
+  "kind": "categoryToolbox",
+  "contents": [
+    {
+      "kind": "category",
+      "name": "시작·흐름",
+      "colour": "#7950f2",
+      "contents": [
+        {"kind": "block", "type": "arduino_setup_loop"}
+      ]
+    },
+    {
+      "kind": "category",
+      "name": "입출력",
+      "colour": "#228be6",
+      "contents": [
+        {"kind": "block", "type": "io_digital_write"}
+      ]
+    },
+    {
+      "kind": "category",
+      "name": "시간",
+      "colour": "#40c057",
+      "contents": [
+        {"kind": "block", "type": "base_delay"}
+      ]
+    },
+    {
+      "kind": "category",
+      "name": "값",
+      "colour": "#fa5252",
+      "contents": [
+        {"kind": "block", "type": "math_number"}
+      ]
+    }
+  ]
+}

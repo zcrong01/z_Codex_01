@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>블록으로 만드는 아두이노 코딩</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;">
+  <style>
+    /* [주석단위]_Part_00100_layout */
+    body { margin:0; font-family: sans-serif; }
+    .topbar { height:50px; display:flex; align-items:center; gap:8px; padding:10px; border-bottom:1px solid #ccc; }
+    .wrap { display:grid; grid-template-columns:20% 40% 40%; height:calc(100vh - 50px); }
+    .pane { border-right:1px solid #ccc; overflow:auto; }
+    .pane:last-child { border-right:none; }
+    #code { width:100%; height:100%; box-sizing:border-box; border:0; padding:10px; font-family:monospace; }
+  </style>
+  <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script src="blocks/core.js"></script>
+  <script src="generators/arduino.js"></script>
+  <script type="module" src="logic/main.js"></script>
+</head>
+<body>
+  <!-- [주석단위]_Part_00200_topbar -->
+  <div class="topbar">
+    <button id="btn_convert">Convert</button>
+    <button id="btn_save">Save</button>
+    <input id="inp_fqbn" placeholder="FQBN" style="width:160px" />
+    <input id="inp_port" placeholder="Port" style="width:100px" />
+    <button id="btn_compile">Compile+Upload</button>
+    <span id="status"></span>
+  </div>
+
+  <!-- [주석단위]_Part_00300_body -->
+  <div class="wrap">
+    <div class="pane"><div id="toolbox" style="display:none"></div></div>
+    <div class="pane"><div id="blocklyDiv" style="width:100%;height:100%;"></div></div>
+    <div class="pane"><textarea id="code" spellcheck="false"></textarea></div>
+  </div>
+
+  <!-- [주석단위]_Part_00400_bootstrap -->
+  <script>
+    let Bridge = null;
+    new QWebChannel(qt.webChannelTransport, function(channel) {
+      Bridge = channel.objects.AppBridge;
+      Bridge.ping();
+      document.getElementById('status').textContent = 'connected';
+    });
+
+    let workspace = null;
+    fetch('toolbox/arduino_toolbox.json')
+      .then(r => r.json())
+      .then(tb => {
+        workspace = Blockly.inject('blocklyDiv', {
+          toolbox: tb,
+          trashcan: true
+        });
+      });
+
+    document.getElementById('btn_convert').addEventListener('click', () => {
+      if (!workspace) return;
+      const code = Blockly.Arduino.workspaceToCode(workspace);
+      document.getElementById('code').value = code;
+      window.__lastSourceMap = window.AppLogic.createSourceMap(code);
+      const issues = window.AppLogic.validateWorkspace(workspace);
+      console.log('validation issues', issues);
+    });
+
+    document.getElementById('btn_save').addEventListener('click', async () => {
+      const code = document.getElementById('code').value;
+      const map = JSON.stringify(window.__lastSourceMap || {});
+      const res = JSON.parse(await Bridge.saveSketch(code, map));
+      document.getElementById('status').textContent = res.ok ? 'saved' : 'error';
+    });
+
+    document.getElementById('btn_compile').addEventListener('click', async () => {
+      const code = document.getElementById('code').value;
+      const map = JSON.stringify(window.__lastSourceMap || {});
+      const fqbn = document.getElementById('inp_fqbn').value.trim();
+      const port = document.getElementById('inp_port').value.trim();
+      if (!fqbn || !port) {
+        alert('FQBN과 Port를 입력하세요');
+        return;
+      }
+      const saveRes = JSON.parse(await Bridge.saveSketch(code, map));
+      if (!saveRes.ok) {
+        alert(saveRes.message || 'save failed');
+        return;
+      }
+      const compRes = JSON.parse(await Bridge.compileAndUpload(saveRes.ino_path, fqbn, port));
+      if (!compRes.ok) {
+        alert(`[${compRes.stage}] ${compRes.message}\n${compRes.stderr || ''}`);
+        document.getElementById('status').textContent = 'compile error';
+      } else {
+        alert('업로드 성공');
+        document.getElementById('status').textContent = 'uploaded';
+      }
+    });
+  </script>
+</body>
+</html>
