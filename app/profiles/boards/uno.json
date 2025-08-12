@@ -1,0 +1,8 @@
+{
+  "board": "uno",
+  "pwm_pins": [3,5,6,9,10,11],
+  "i2c": {"sda": "A4", "scl": "A5"},
+  "spi": {"mosi": 11, "miso": 12, "sck": 13, "ss": 10},
+  "serial_ports": ["Serial"],
+  "limits": {"max_pwm": 255}
+}
