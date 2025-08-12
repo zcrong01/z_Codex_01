@@ -17,6 +17,7 @@
   <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
   <script src="blocks/core.js"></script>
   <script src="generators/arduino.js"></script>
+  <script type="module" src="logic/main.js"></script>
 </head>
 <body>
   <!-- [주석단위]_Part_00200_topbar -->
@@ -28,19 +29,7 @@
 
   <!-- [주석단위]_Part_00300_body -->
   <div class="wrap">
-    <div class="pane">
-      <xml id="toolbox" style="display:none">
-        <category name="흐름" colour="#7950f2">
-          <block type="arduino_setup_loop"></block>
-        </category>
-        <category name="입출력" colour="#228be6">
-          <block type="io_digital_write"></block>
-        </category>
-        <category name="시간" colour="#40c057">
-          <block type="base_delay"></block>
-        </category>
-      </xml>
-    </div>
+    <div class="pane"><div id="toolbox" style="display:none"></div></div>
     <div class="pane"><div id="blocklyDiv" style="width:100%;height:100%;"></div></div>
     <div class="pane"><textarea id="code" spellcheck="false"></textarea></div>
   </div>
@@ -54,14 +43,23 @@
       document.getElementById('status').textContent = 'connected';
     });
 
-    const workspace = Blockly.inject('blocklyDiv', {
-      toolbox: document.getElementById('toolbox'),
-      trashcan: true
-    });
+    let workspace = null;
+    fetch('toolbox/arduino_toolbox.json')
+      .then(r => r.json())
+      .then(tb => {
+        workspace = Blockly.inject('blocklyDiv', {
+          toolbox: tb,
+          trashcan: true
+        });
+      });
 
     document.getElementById('btn_convert').addEventListener('click', () => {
+      if (!workspace) return;
       const code = Blockly.Arduino.workspaceToCode(workspace);
       document.getElementById('code').value = code;
+      window.__lastSourceMap = window.AppLogic.createSourceMap(code);
+      const issues = window.AppLogic.validateWorkspace(workspace);
+      console.log('validation issues', issues);
     });
 
     document.getElementById('btn_save').addEventListener('click', async () => {
